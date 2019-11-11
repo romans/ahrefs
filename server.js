@@ -1,10 +1,15 @@
 const express = require('express');
-const next = require('next');
-
-const port = parseInt(process.env.PORT, 10) || 3000;
-const dev = process.env.NODE_ENV !== 'production';
-const app = next({dev});
+const cors = require('cors');
+const compression = require('compression');
 const request = require('request');
+
+const app = express();
+
+// CORS
+app.use(cors());
+
+// gzip
+app.use(compression());
 
 const requestTimeout = 240 * 1000;
 
@@ -27,35 +32,30 @@ const postRequest = request.defaults({
 const AHREFS_1 = 'https://ahrefs.com/oauth2/token.php';
 const AHREFS_2 = 'https://apiv2.ahrefs.com';
 
-app.prepare().then(() => {
-  const server = express();
-
-  server.post('/oauth2', async (req, res) => {
-    postRequest({
-      url: AHREFS_1,
-      headers: {
-        ...['Authorization'].reduce((acc, name) => ({
-          ...acc,
-          [name]: req.headers[name]
-        }))
-      },
-      form: req.form,
-    }, (verr, vres, vbody) => {
-      res.send(vbody)
-    });
+app.post('/oauth2', async (req, res) => {
+  postRequest({
+    url: AHREFS_1,
+    headers: {
+      ...['Authorization'].reduce((acc, name) => ({
+        ...acc,
+        [name]: req.headers[name]
+      }))
+    },
+    form: req.form,
+  }, (verr, vres, vbody) => {
+    res.send(vbody)
   });
-
-  server.get('/', async (req, res) => {
-    getRequest({
-      url: AHREFS_2,
-      qs: req.qs,
-    }, (verr, vres, vbody) => {
-      res.send(vbody)
-    });
-  });
-
-  server.listen(port, err => {
-    if (err) throw err;
-    console.log(`> Ready on http://localhost:${port}`)
-  })
 });
+
+app.get('/', async (req, res) => {
+  getRequest({
+    url: AHREFS_2,
+    qs: req.qs,
+  }, (verr, vres, vbody) => {
+    res.send(vbody)
+  });
+});
+
+// run server
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`:${port}`));
