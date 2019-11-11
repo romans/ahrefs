@@ -2,14 +2,14 @@ const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
 const request = require('request');
+const bodyParser = require('body-parser');
 
 const app = express();
 
-// CORS
 app.use(cors());
-
-// gzip
 app.use(compression());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 const requestTimeout = 240 * 1000;
 
@@ -41,7 +41,7 @@ app.post('/oauth2', async (req, res) => {
         [name]: req.headers[name]
       }))
     },
-    form: req.form,
+    form: req.body,
   }, (verr, vres, vbody) => {
     res.send(vbody)
   });
